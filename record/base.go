@@ -30,16 +30,16 @@ func ConvertToType(rawType string) Type {
 	return t
 }
 
-type BaseDataInterface interface {
+type BaseData interface {
 	getType() Type
 }
 
-type BaseData struct {
+type BaseDataImp struct {
 	Type         Type          `json:"type,omitempty"`
 	MessageChain message.Chain `json:"messageChain,omitempty"`
 }
 
-func (b *BaseData) UnmarshalJSON(data []byte) error {
+func (b *BaseDataImp) UnmarshalJSON(data []byte) error {
 	results := gjson.GetMany(string(data), "type", "messageChain")
 	if len(results) < 1 {
 		return NotEnoughFieldsError
@@ -59,24 +59,24 @@ func (b *BaseData) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (b *BaseData) getType() Type {
+func (b *BaseDataImp) getType() Type {
 	return b.Type
 }
 
-type BaseInterface interface {
+type Base interface {
 	getSyncID() string
-	getData() BaseDataInterface
+	getData() BaseData
 }
 
-type Base struct {
-	SyncID string            `json:"syncId,omitempty"`
-	Data   BaseDataInterface `json:"data,omitempty"`
+type BaseImp struct {
+	SyncID string   `json:"syncId,omitempty"`
+	Data   BaseData `json:"data,omitempty"`
 }
 
-func (b *Base) getSyncID() string {
+func (b *BaseImp) getSyncID() string {
 	return b.SyncID
 }
 
-func (b *Base) getData() BaseDataInterface {
+func (b *BaseImp) getData() BaseData {
 	return b.Data
 }

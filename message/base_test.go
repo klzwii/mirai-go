@@ -22,7 +22,7 @@ func TestGetMessageUnknown(t *testing.T) {
 	result := gjson.Parse(rawJson)
 	message, err := GetMessage(result)
 	assert.Nil(t, err)
-	baseMessage, ok := message.(*Base)
+	baseMessage, ok := message.(*BaseImp)
 	assert.True(t, ok)
 	assert.Equal(t, baseMessage.Type, Type("Unknown"))
 }
@@ -36,5 +36,5 @@ func TestGetMessageSource(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, sourceMessage.Type, SOURCE)
 	assert.Equal(t, sourceMessage.Time, uint64(1659604654))
-	assert.Equal(t, sourceMessage.ID, 1422833)
+	assert.Equal(t, sourceMessage.ID, uint64(1422833))
 }

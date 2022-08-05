@@ -12,16 +12,16 @@ const (
 	PLAIN  = Type("Plain")
 )
 
-func GetMessage(result gjson.Result) (BaseInterface, error) {
+func GetMessage(result gjson.Result) (Base, error) {
 	messageType := Type(result.Get("type").Str)
-	var ret BaseInterface = nil
+	var ret Base = nil
 	switch messageType {
 	case SOURCE:
 		ret = &SourceMessage{}
 	case PLAIN:
 		ret = &PlainMessage{}
 	default:
-		ret = &Base{}
+		ret = &BaseImp{}
 	}
 	if err := jsoniter.UnmarshalFromString(result.Raw, ret); err != nil {
 		return nil, err
@@ -29,25 +29,25 @@ func GetMessage(result gjson.Result) (BaseInterface, error) {
 	return ret, nil
 }
 
-type BaseInterface interface {
+type Base interface {
 	GetType() Type
 }
 
-type Base struct {
+type BaseImp struct {
 	Type Type `json:"type,omitempty"`
 }
 
-func (b *Base) GetType() Type {
+func (b *BaseImp) GetType() Type {
 	return b.Type
 }
 
 type SourceMessage struct {
-	Base
+	BaseImp
 	Time uint64 `json:"time,omitempty"`
 	ID   uint64 `json:"id,omitempty"`
 }
 
 type PlainMessage struct {
-	Base
+	BaseImp
 	Text string `json:"text,omitempty"`
 }

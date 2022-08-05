@@ -3,8 +3,12 @@ package main
 import (
 	"github.com/gorilla/websocket"
 	"github.com/klzwii/mirai-go/assembler"
+	"github.com/klzwii/mirai-go/function"
+	"github.com/klzwii/mirai-go/function/sender"
+	"github.com/klzwii/mirai-go/message"
 	"log"
 	"net/url"
+	"time"
 )
 
 func main() {
@@ -16,13 +20,22 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	go func() {
+		senderImp := sender.GetWSSender(function.GetWsConn(c), "")
+		for i := 0; i < 4; i++ {
+			time.Sleep(3 * time.Second)
+			if err := senderImp.SendToGroup(590258464, message.NewMessageChain().AddPlain("123")); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}()
 	for {
-		_, message, err := c.ReadMessage()
+		_, m, err := c.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
 			return
 		}
-		assembler.MarshalToRecord(string(message))
-		log.Printf("recv: %s", message)
+		assembler.MarshalToRecord(string(m))
+		log.Printf("recv: %s", m)
 	}
 }

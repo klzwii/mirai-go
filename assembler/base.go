@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-type recordFunc func() record.BaseInterface
+type recordFunc func() record.Base
 
 var (
 	logger  = log.Default()
@@ -15,13 +15,13 @@ var (
 		record.GroupMessage:  record.GetGroupMessageRecord,
 		record.FriendMessage: record.GetFriendMessageRecord,
 	}
-	nilObject = &record.Base{
+	nilObject = &record.BaseImp{
 		SyncID: "-2",
-		Data:   &record.BaseData{Type: record.NULL},
+		Data:   &record.BaseDataImp{Type: record.NULL},
 	}
 )
 
-func innerMarshal(rawJson string, ret record.BaseInterface) (record.BaseInterface, error) {
+func innerMarshal(rawJson string, ret record.Base) (record.Base, error) {
 	if err := jsoniter.UnmarshalFromString(rawJson, ret); err != nil {
 		log.Println(err)
 		return nil, err
@@ -30,7 +30,7 @@ func innerMarshal(rawJson string, ret record.BaseInterface) (record.BaseInterfac
 }
 
 // MarshalToRecord convert raw json Message
-func MarshalToRecord(rawMessage string) record.BaseInterface {
+func MarshalToRecord(rawMessage string) record.Base {
 	syncID := gjson.Get(rawMessage, "syncID").Str
 	logger.Println("sync_id is " + syncID)
 	var recordType record.Type = record.NULL

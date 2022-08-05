@@ -1,8 +1,12 @@
 package message
 
-type Chain []BaseInterface
+type Chain []Base
 
-func (c *Chain) addPlain(text string) *Chain {
-	ret := append(*c, &PlainMessage{Text: text})
+func NewMessageChain() *Chain {
+	return &Chain{}
+}
+
+func (c *Chain) AddPlain(text string) *Chain {
+	ret := append(*c, &PlainMessage{BaseImp: BaseImp{Type: PLAIN}, Text: text})
 	return &ret
 }
