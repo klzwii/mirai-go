@@ -5,16 +5,6 @@ import (
 	"github.com/klzwii/mirai-go/message"
 )
 
-type Sender interface {
-	SendToFriend(target uint64, contents *message.Chain) error
-	SendToGroup(target uint64, contents *message.Chain) error
-}
-
-type senderWSImp struct {
-	sessionKey string
-	conn       function.Conn
-}
-
 func GetWSSender(conn function.Conn, sessionKey string) Sender {
 	return &senderWSImp{
 		sessionKey: sessionKey,
@@ -23,17 +13,19 @@ func GetWSSender(conn function.Conn, sessionKey string) Sender {
 }
 
 func (d *senderWSImp) SendToFriend(target uint64, contents *message.Chain) error {
-	return d.conn.SendRequest("sendFriendMessage", "", SendRequest{
+	_, err := d.conn.SendRequest("sendFriendMessage", "", SendRequest{
 		Target:       target,
 		MessageChain: contents,
 	})
+	return err
 }
 
 func (d *senderWSImp) SendToGroup(target uint64, contents *message.Chain) error {
-	return d.conn.SendRequest("sendGroupMessage", "", SendRequest{
+	_, err := d.conn.SendRequest("sendGroupMessage", "", SendRequest{
 		Target:       target,
 		MessageChain: contents,
 	})
+	return err
 }
 
 type SendRequest struct {

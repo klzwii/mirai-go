@@ -11,9 +11,9 @@ func TestGetFriendMessageData(t *testing.T) {
 	record := GetFriendMessageRecord()
 	err := jsoniter.UnmarshalFromString("{\n    \"syncId\": \"-1\",\n    \"data\": {\n        \"type\": \"FriendMessage\",\n        \"messageChain\": [\n            {\n                \"type\": \"Source\",\n                \"id\": 17705,\n                \"time\": 1659604789\n            },\n            {\n                \"type\": \"Plain\",\n                \"text\": \"hi\"\n            }\n        ],\n        \"sender\": {\n            \"id\": 1027898733,\n            \"nickname\": \"klzwii(已黑化)\",\n            \"remark\": \"klzwii\"\n        }\n    }\n}", record)
 	assert.Nil(t, err)
-	assert.Equal(t, record.getSyncID(), "-1")
+	assert.Equal(t, record.GetSyncID(), "-1")
 
-	friendMessageData, ok := record.getData().(*FriendMessageData)
+	friendMessageData, ok := record.GetData().(*FriendMessageData)
 	assert.True(t, ok)
 
 	chain := friendMessageData.MessageChain

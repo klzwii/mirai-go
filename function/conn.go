@@ -1,12 +1,23 @@
 package function
 
 import (
+	"errors"
 	jsoniter "github.com/json-iterator/go"
-	"sync/atomic"
+	"github.com/klzwii/mirai-go/util"
+	"sync"
+	"time"
 )
 
+var timerPool = sync.Pool{
+	New: func() any {
+		timer := time.NewTimer(10 * time.Second)
+		timer.Stop()
+		return timer
+	},
+}
+
 type Conn interface {
-	SendRequest(command string, subCommand string, req interface{}) error
+	SendRequest(command string, subCommand string, req interface{}) ([]byte, error)
 }
 
 type wsConn interface {
@@ -15,13 +26,14 @@ type wsConn interface {
 
 func GetWsConn(conn wsConn) Conn {
 	return &connWsImp{
-		conn: conn,
+		conn:   conn,
+		center: util.New(2000),
 	}
 }
 
 type connWsImp struct {
 	conn   wsConn
-	syncID atomic.Uint32
+	center util.EventCenter
 }
 
 type wsRequest struct {
@@ -31,13 +43,27 @@ type wsRequest struct {
 	Content    interface{} `json:"content"`
 }
 
-func (c *connWsImp) SendRequest(command string, subCommand string, req interface{}) error {
+var ErrTimeOut = errors.New("websocket send request timeout")
+
+func (c *connWsImp) SendRequest(command string, subCommand string, req interface{}) ([]byte, error) {
+	syncId, ch := c.center.RegisterEvent()
 	t := &wsRequest{
-		SyncId:     c.syncID.Add(1),
+		SyncId:     syncId,
 		Command:    command,
 		SubCommand: subCommand,
 		Content:    req,
 	}
 	println(jsoniter.MarshalToString(t))
-	return c.conn.WriteJSON(t)
+	if err := c.conn.WriteJSON(t); err != nil {
+		return nil, err
+	}
+	timer := timerPool.Get().(*time.Timer)
+	timer.Reset(20 * time.Second)
+	defer timerPool.Put(timer)
+	select {
+	case ret := <-ch:
+		return ret.Data.([]byte), ret.Err
+	case <-timer.C:
+		return nil, ErrTimeOut
+	}
 }

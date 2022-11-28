@@ -29,6 +29,6 @@ func TestConnWsImp_SendRequest(t *testing.T) {
 		assert.Equal(t, testData, req.Content)
 	}}
 	wsCon := GetWsConn(conn)
-	err := wsCon.SendRequest("testMainCommand", "testSubCommand", testData)
+	_, err := wsCon.SendRequest("testMainCommand", "testSubCommand", testData)
 	assert.Nil(t, err)
 }

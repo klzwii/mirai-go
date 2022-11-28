@@ -64,8 +64,9 @@ func (b *BaseDataImp) getType() Type {
 }
 
 type Base interface {
-	getSyncID() string
-	getData() BaseData
+	GetSyncID() string
+	GetData() BaseData
+	GetType() Type
 }
 
 type BaseImp struct {
@@ -73,10 +74,14 @@ type BaseImp struct {
 	Data   BaseData `json:"data,omitempty"`
 }
 
-func (b *BaseImp) getSyncID() string {
+func (b *BaseImp) GetSyncID() string {
 	return b.SyncID
 }
 
-func (b *BaseImp) getData() BaseData {
+func (b *BaseImp) GetData() BaseData {
 	return b.Data
+}
+
+func (b *BaseImp) GetType() Type {
+	return b.Data.getType()
 }
