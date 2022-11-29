@@ -3,6 +3,8 @@ package sender
 import (
 	"github.com/klzwii/mirai-go/function"
 	"github.com/klzwii/mirai-go/message"
+	"github.com/klzwii/mirai-go/record"
+	log "github.com/sirupsen/logrus"
 )
 
 func GetWSSender(conn function.Conn, sessionKey string) Sender {
@@ -12,20 +14,24 @@ func GetWSSender(conn function.Conn, sessionKey string) Sender {
 	}
 }
 
-func (d *senderWSImp) SendToFriend(target uint64, contents *message.Chain) error {
-	_, err := d.conn.SendRequest("sendFriendMessage", "", SendRequest{
+func (d *senderWSImp) SendToFriend(target uint64, contents *message.Chain) (*record.SendMessageResponseData, error) {
+	resp := record.GetSendMessageResponse()
+	err := d.conn.SendRequest("sendFriendMessage", "", SendRequest{
 		Target:       target,
 		MessageChain: contents,
-	})
-	return err
+	}, resp)
+	log.Debugf("send to group get response %+v", resp.GetData().(*record.SendMessageResponseData))
+	return resp.GetData().(*record.SendMessageResponseData), err
 }
 
-func (d *senderWSImp) SendToGroup(target uint64, contents *message.Chain) error {
-	_, err := d.conn.SendRequest("sendGroupMessage", "", SendRequest{
+func (d *senderWSImp) SendToGroup(target uint64, contents *message.Chain) (*record.SendMessageResponseData, error) {
+	resp := record.GetSendMessageResponse()
+	err := d.conn.SendRequest("sendGroupMessage", "", SendRequest{
 		Target:       target,
 		MessageChain: contents,
-	})
-	return err
+	}, resp)
+	log.Debugf("send to group get response %+v", resp.GetData().(*record.SendMessageResponseData))
+	return resp.GetData().(*record.SendMessageResponseData), err
 }
 
 type SendRequest struct {

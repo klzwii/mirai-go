@@ -3,14 +3,13 @@ package assembler
 import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/klzwii/mirai-go/record"
+	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
-	"log"
 )
 
 type recordFunc func() record.Base
 
 var (
-	logger  = log.Default()
 	funcMap = map[record.Type]recordFunc{
 		record.GroupMessage:  record.GetGroupMessageRecord,
 		record.FriendMessage: record.GetFriendMessageRecord,
@@ -21,8 +20,8 @@ var (
 	}
 )
 
-func innerMarshal(rawJson string, ret record.Base) (record.Base, error) {
-	if err := jsoniter.UnmarshalFromString(rawJson, ret); err != nil {
+func innerMarshal(rawJson []byte, ret record.Base) (record.Base, error) {
+	if err := jsoniter.Unmarshal(rawJson, ret); err != nil {
 		log.Println(err)
 		return nil, err
 	}
@@ -30,15 +29,12 @@ func innerMarshal(rawJson string, ret record.Base) (record.Base, error) {
 }
 
 // UnmarshalToRecord convert raw json Message to a record
-func UnmarshalToRecord(rawMessage string) record.Base {
-	//syncID := gjson.Get(rawMessage, "syncID").Str
-	//logger.Println("sync_id is " + syncID)
+func UnmarshalToRecord(rawMessage []byte) record.Base {
 	var recordType = record.NULL
-	data := gjson.Get(rawMessage, "data")
+	data := gjson.GetBytes(rawMessage, "data")
 	if data.IsObject() {
 		recordType = record.ConvertToType(data.Get("type").Str)
 	}
-	logger.Println("record type is" + recordType)
 	if fun, ok := funcMap[recordType]; ok {
 		if ret, err := innerMarshal(rawMessage, fun()); err == nil {
 			return ret

@@ -9,9 +9,10 @@ import (
 type Type string
 
 const (
-	NULL          = Type("")
-	FriendMessage = Type("FriendMessage")
-	GroupMessage  = Type("GroupMessage")
+	NULL                = Type("")
+	FriendMessage       = Type("FriendMessage")
+	GroupMessage        = Type("GroupMessage")
+	SendMessageResponse = Type("SendMessageResponse")
 )
 
 var (

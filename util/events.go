@@ -53,6 +53,8 @@ func (e2 *eventCenterImp) RegisterEvent() (uint32, chan *Result) {
 		nSTate.head = curState.head
 		nSTate.size = curState.size + 1
 	}
+	t := e2.state.Load()
+	println(t)
 	id := nSTate.head + nSTate.size - 1
 	retCh := make(chan *Result, 1)
 	oldValue := e2.events[id%e2.cap].Swap(&event{

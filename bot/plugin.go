@@ -26,6 +26,6 @@ func (t *TestPlugin) OnGroupMessage(record *record.GroupMessageData) {
 }
 
 func (t *TestPlugin) OnFriendMessage(record *record.FriendMessageData) {
-	_ = t.Sender.SendToGroup(590258464, message.NewMessageChain().AddPlain("123"))
+	_, _ = t.Sender.SendToGroup(590258464, message.NewMessageChain().AddPlain("123"))
 	fmt.Println("this is a friend Message", record.Sender)
 }

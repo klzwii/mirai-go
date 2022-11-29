@@ -9,6 +9,11 @@ type mockConn struct {
 	testFunc func(v interface{})
 }
 
+func (m *mockConn) ReadMessage() (messageType int, p []byte, err error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (m *mockConn) WriteJSON(v interface{}) error {
 	m.testFunc(v)
 	return nil
