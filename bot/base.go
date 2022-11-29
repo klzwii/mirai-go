@@ -7,7 +7,7 @@ import (
 	"github.com/klzwii/mirai-go/function"
 	"github.com/klzwii/mirai-go/record"
 	"github.com/klzwii/mirai-go/sender"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/url"
 )
 
@@ -20,6 +20,9 @@ type Bot struct {
 }
 
 func (b *Bot) Start(ctx context.Context) {
+	for _, plugin := range b.plugins {
+		plugin.RegisterSender(b.Sender)
+	}
 	for {
 		select {
 		case curRecord := <-b.Reader:
@@ -62,6 +65,7 @@ func GetBot() (*Bot, error) {
 				log.Println("read:", err)
 				return
 			}
+			log.Debugf("Get ws message %v", string(m))
 			ch <- assembler.UnmarshalToRecord(string(m))
 			//log.Printf("recv: %s", m)
 		}

@@ -2,8 +2,8 @@ package function
 
 import (
 	"errors"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/klzwii/mirai-go/util"
+	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
@@ -53,7 +53,7 @@ func (c *connWsImp) SendRequest(command string, subCommand string, req interface
 		SubCommand: subCommand,
 		Content:    req,
 	}
-	println(jsoniter.MarshalToString(t))
+	log.Debugf("send ws request %+v", *t)
 	if err := c.conn.WriteJSON(t); err != nil {
 		return nil, err
 	}
