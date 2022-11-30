@@ -10,7 +10,7 @@ type EventCenter interface {
 	// RegisterEvent to event center, return unique identifier for current event
 	RegisterEvent() (uint32, chan *Result)
 	// Notify the event with id, and pass param in to it
-	Notify(id uint32, in any) error
+	Notify(id uint32, in any, err error) error
 }
 
 type Result struct {
@@ -49,12 +49,13 @@ func (e2 *eventCenterImp) RegisterEvent() (uint32, chan *Result) {
 		size: curState.size + 1,
 	}
 	for curState.size == e2.cap || !e2.state.CompareAndSwap(curState, nSTate) {
+		if curState.size == e2.cap {
+			_ = e2.notifySlow()
+		}
 		curState = e2.state.Load()
 		nSTate.head = curState.head
 		nSTate.size = curState.size + 1
 	}
-	t := e2.state.Load()
-	println(t)
 	id := nSTate.head + nSTate.size - 1
 	retCh := make(chan *Result, 1)
 	oldValue := e2.events[id%e2.cap].Swap(&event{
@@ -67,7 +68,7 @@ func (e2 *eventCenterImp) RegisterEvent() (uint32, chan *Result) {
 	return id, retCh
 }
 
-func (e2 *eventCenterImp) Notify(id uint32, in any) error {
+func (e2 *eventCenterImp) Notify(id uint32, in any, err error) error {
 	curState := e2.state.Load()
 	if id < curState.head || id >= curState.head+curState.size {
 		return EventOutOfRangeError
@@ -81,28 +82,38 @@ func (e2 *eventCenterImp) Notify(id uint32, in any) error {
 	}
 	t.ch <- &Result{
 		Data: in,
-		Err:  nil,
+		Err:  err,
 	}
 	close(t.ch)
-	if e2.events[curState.head%e2.cap].Load() == placeHolderDelete {
-		e2.mu.Lock()
-		defer e2.mu.Unlock()
+	//if e2.events[curState.head%e2.cap].Load() == placeHolderDelete {
+	//	go func() {
+	//		_ = e2.notifySlow()
+	//	}()
+	//}
+	return nil
+}
+
+func (e2 *eventCenterImp) notifySlow() error {
+	if !e2.mu.TryLock() {
+		return nil
+	}
+	defer e2.mu.Unlock()
+	curState := e2.state.Load()
+	var eraseSize = uint32(0)
+	for curState.size > eraseSize && e2.events[(curState.head+eraseSize)%e2.cap].CompareAndSwap(placeHolderDelete, placeHolderAdd) {
+		eraseSize += 1
+	}
+	nState := &state{
+		head: curState.head + eraseSize,
+		size: curState.size - eraseSize,
+	}
+	for !e2.state.CompareAndSwap(curState, nState) {
 		curState = e2.state.Load()
-		nState := &state{
-			head: curState.head,
-			size: curState.size,
-		}
-		var eraseSize = uint32(0)
-		for nState.size > 0 && e2.events[nState.head%e2.cap].CompareAndSwap(placeHolderDelete, placeHolderAdd) {
+		for curState.size > eraseSize && e2.events[(curState.head+eraseSize)%e2.cap].CompareAndSwap(placeHolderDelete, placeHolderAdd) {
 			eraseSize += 1
 		}
-		nState.head += eraseSize
-		nState.size -= eraseSize
-		for !e2.state.CompareAndSwap(curState, nState) {
-			curState = e2.state.Load()
-			nState.head = curState.head + eraseSize
-			nState.size = curState.size - eraseSize
-		}
+		nState.size = curState.size - eraseSize
+		nState.head = curState.head + eraseSize
 	}
 	return nil
 }

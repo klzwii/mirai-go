@@ -11,7 +11,6 @@ func TestGetGroupMessageRecord(t *testing.T) {
 	record := GetGroupMessageRecord()
 	err := jsoniter.Unmarshal([]byte("{\n    \"syncId\": \"-1\",\n    \"data\": {\n        \"type\": \"GroupMessage\",\n        \"messageChain\": [\n            {\n                \"type\": \"Source\",\n                \"id\": 1422833,\n                \"time\": 1659604654\n            },\n            {\n                \"type\": \"Plain\",\n                \"text\": \"这个小酥肉好吃吗？\"\n            }\n        ],\n        \"sender\": {\n            \"id\": 553127268,\n            \"memberName\": \"毛\",\n            \"specialTitle\": \"\",\n            \"permission\": \"MEMBER\",\n            \"joinTimestamp\": 1655306659,\n            \"lastSpeakTimestamp\": 1659604654,\n            \"muteTimeRemaining\": 0,\n            \"group\": {\n                \"id\": 398294930,\n                \"name\": \"東方緑豆汤 ~ Dream of the Green Dragon\",\n                \"permission\": \"MEMBER\"\n            }\n        }\n    }\n}"), record)
 	assert.Nil(t, err)
-	println(record)
 	groupRecord, ok := record.(*BaseImp)
 	assert.True(t, ok)
 	groupData, ok := groupRecord.Data.(*GroupMessageData)

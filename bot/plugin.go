@@ -1,10 +1,10 @@
 package bot
 
 import (
-	"fmt"
 	"github.com/klzwii/mirai-go/message"
 	"github.com/klzwii/mirai-go/record"
 	"github.com/klzwii/mirai-go/sender"
+	log "github.com/sirupsen/logrus"
 )
 
 type Plugin interface {
@@ -22,10 +22,17 @@ func (t *TestPlugin) RegisterSender(sender sender.Sender) {
 }
 
 func (t *TestPlugin) OnGroupMessage(record *record.GroupMessageData) {
-	fmt.Println("this is a group Message", record.Sender)
+	chain := record.MessageChain
+	if len(chain) < 2 || chain[1].GetType() != message.PLAIN {
+		return
+	}
+	if chain[1].(*message.PlainMessage).Text != "#抽签" {
+		return
+	}
+	if resp, err := t.Sender.SendToGroup(record.Sender.Group.ID, message.NewMessageChain().AddPlain("testing")); err != nil || resp.Code != 0 {
+		log.Errorf("Test plugin send message error %v, resp %v", err, resp)
+	}
 }
 
 func (t *TestPlugin) OnFriendMessage(record *record.FriendMessageData) {
-	_, _ = t.Sender.SendToGroup(590258464, message.NewMessageChain().AddPlain("123"))
-	fmt.Println("this is a friend Message", record.Sender)
 }

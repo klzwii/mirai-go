@@ -78,7 +78,6 @@ func (c *connWsImp) SendRequest(command string, subCommand string, req any, resp
 		if ret.Err != nil {
 			return ret.Err
 		}
-
 		return json.Unmarshal(ret.Data.([]byte), resp)
 	case <-timer.C:
 		return ErrTimeOut
@@ -118,7 +117,7 @@ func getDispatchFunc(e util.EventCenter, ch chan record.Base) func(message []byt
 				log.Error("parse sync ID failed ", err)
 				return
 			}
-			_ = e.Notify(uint32(eventID), message)
+			_ = e.Notify(uint32(eventID), message, nil)
 			log.Debug("notified event ", eventID)
 		}
 	}
