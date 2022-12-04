@@ -2,6 +2,7 @@ package util
 
 import (
 	"errors"
+	"runtime"
 	"sync"
 	"sync/atomic"
 )
@@ -16,6 +17,12 @@ type EventCenter interface {
 type Result struct {
 	Data any
 	Err  error
+}
+
+var pool = &sync.Pool{
+	New: func() any {
+		return &event{ch: make(chan *Result, 1)}
+	},
 }
 
 type event struct {
@@ -37,6 +44,7 @@ var (
 
 type eventCenterImp struct {
 	mu     *sync.Mutex
+	cond   *sync.Cond
 	cap    uint32
 	events []atomic.Pointer[event]
 	state  atomic.Pointer[state]
@@ -50,18 +58,22 @@ func (e2 *eventCenterImp) RegisterEvent() (uint32, chan *Result) {
 	}
 	for curState.size == e2.cap || !e2.state.CompareAndSwap(curState, nSTate) {
 		if curState.size == e2.cap {
-			_ = e2.notifySlow()
+			for curState.size == e2.cap {
+				e2.notifySlow()
+				curState = e2.state.Load()
+				runtime.Gosched()
+			}
+		} else {
+			curState = e2.state.Load()
 		}
-		curState = e2.state.Load()
 		nSTate.head = curState.head
 		nSTate.size = curState.size + 1
 	}
 	id := nSTate.head + nSTate.size - 1
-	retCh := make(chan *Result, 1)
-	oldValue := e2.events[id%e2.cap].Swap(&event{
-		ch: retCh,
-		id: id,
-	})
+	newEvent := pool.Get().(*event)
+	retCh := newEvent.ch
+	newEvent.id = id
+	oldValue := e2.events[id%e2.cap].Swap(newEvent)
 	if oldValue != placeHolderAdd {
 		panic("consistency check fail, all new value should be put on placeholder add")
 	}
@@ -85,17 +97,14 @@ func (e2 *eventCenterImp) Notify(id uint32, in any, err error) error {
 		Err:  err,
 	}
 	close(t.ch)
-	//if e2.events[curState.head%e2.cap].Load() == placeHolderDelete {
-	//	go func() {
-	//		_ = e2.notifySlow()
-	//	}()
-	//}
+	t.ch = make(chan *Result, 1)
+	pool.Put(t)
 	return nil
 }
 
-func (e2 *eventCenterImp) notifySlow() error {
+func (e2 *eventCenterImp) notifySlow() uint32 {
 	if !e2.mu.TryLock() {
-		return nil
+		return 0
 	}
 	defer e2.mu.Unlock()
 	curState := e2.state.Load()
@@ -115,12 +124,14 @@ func (e2 *eventCenterImp) notifySlow() error {
 		nState.size = curState.size - eraseSize
 		nState.head = curState.head + eraseSize
 	}
-	return nil
+	e2.cond.Broadcast()
+	return eraseSize
 }
 
 func New(cap uint32) EventCenter {
 	center := &eventCenterImp{
 		mu:     &sync.Mutex{},
+		cond:   sync.NewCond(&sync.Mutex{}),
 		cap:    cap,
 		events: make([]atomic.Pointer[event], cap),
 		state:  atomic.Pointer[state]{},

@@ -3,6 +3,7 @@ package util
 import (
 	"github.com/stretchr/testify/assert"
 	"math/rand"
+	_ "net/http/pprof"
 	"runtime"
 	"sort"
 	"sync"
@@ -148,11 +149,11 @@ func innerBench(b *testing.B, e EventCenter, generator func(n int) []*operation)
 			_ = e.Notify(o.id, o.id, nil)
 		} else {
 			id, ch := e.RegisterEvent()
-			assert.Equal(b, id, o.id)
+			//assert.Equal(b, id, o.id)
 			//fmt.Println(id, o.id)
 			go func(ch chan *Result, id uint32) {
-				res := <-ch
-				assert.Equal(b, id, res.Data.(uint32))
+				_ = <-ch
+				//assert.Equal(b, id, res.Data.(uint32))
 			}(ch, id)
 		}
 	}
@@ -163,6 +164,8 @@ func innerBenchParallel(b *testing.B, e EventCenter, generator func(n int) []*op
 	ope := generator(20000)
 	var mus [20000]atomic.Bool
 	b.StartTimer()
+	wg := &sync.WaitGroup{}
+	wg.Add(20000)
 	for _, o := range ope {
 		go func(o *operation) {
 			if o.ty {
@@ -174,13 +177,15 @@ func innerBenchParallel(b *testing.B, e EventCenter, generator func(n int) []*op
 				id, ch := e.RegisterEvent()
 				mus[id-1].Store(true)
 				go func(ch chan *Result, id uint32) {
-					res := <-ch
-					assert.Equal(b, id, res.Data.(uint32))
+					_ = <-ch
+					//assert.Equal(b, id, res.Data.(uint32))
+					wg.Done()
 					//println(id)
 				}(ch, id)
 			}
 		}(o)
 	}
+	wg.Wait()
 }
 
 func BenchmarkEventCenter(b *testing.B) {
@@ -213,7 +218,7 @@ func BenchmarkPlainSequential(b *testing.B) {
 
 func BenchmarkEventCenterParallel(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		e := New(20000)
+		e := New(2000)
 		innerBenchParallel(b, e, generateSequentialTestData)
 	}
 }
