@@ -2,43 +2,42 @@ package bot
 
 import (
 	"context"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/klzwii/mirai-go/function"
 	"github.com/klzwii/mirai-go/record"
 	"github.com/klzwii/mirai-go/sender"
+	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 	"net/url"
 )
 
+var logger = logrus.WithField("core", "bot")
+
 type Bot struct {
-	Sender  sender.Sender
+	sender  sender.Sender
 	conn    function.Conn
 	plugins []Plugin
+	conf    map[string]interface{}
+}
+
+type config struct {
+	Port      string
+	VerifyKey string `mapstructure:"verify_key"`
+	QQ        string
 }
 
 func (b *Bot) Start(ctx context.Context) {
-	for _, plugin := range b.plugins {
-		plugin.RegisterSender(b.Sender)
-	}
+	initiatePlugins(b.conf, b.plugins, b.sender)
 	ch := make(chan record.Base, 100)
 	go b.conn.StartReading(ctx, ch)
+	logger.Info("bot初始化完成")
 	for {
 		select {
 		case curRecord := <-ch:
-			go func() {
-				switch curRecord.GetType() {
-				case record.FriendMessage:
-					message := (curRecord.GetData()).(*record.FriendMessageData)
-					for _, plugin := range b.plugins {
-						plugin.OnFriendMessage(message)
-					}
-				case record.GroupMessage:
-					message := (curRecord.GetData()).(*record.GroupMessageData)
-					for _, plugin := range b.plugins {
-						plugin.OnGroupMessage(message)
-					}
-				}
-			}()
+			go triggerPlugins(curRecord, b)
 		case <-ctx.Done():
+			logger.Info("bot退出")
 			return
 		}
 	}
@@ -48,11 +47,22 @@ func (b *Bot) RegisterPlugin(plugin Plugin) {
 	b.plugins = append(b.plugins, plugin)
 }
 
-func GetBot() (*Bot, error) {
-	u := url.URL{Scheme: "ws", Host: "localhost:5679", Path: "/message"}
+func GetBot(rawConfig map[string]any) (*Bot, error) {
+	var (
+		conf    = &config{}
+		err     error
+		decoder *mapstructure.Decoder
+	)
+	if decoder, err = mapstructure.NewDecoder(&mapstructure.DecoderConfig{ErrorUnset: true, WeaklyTypedInput: true, Result: conf}); err != nil {
+		return nil, err
+	}
+	if err = decoder.Decode(rawConfig["bot"]); err != nil {
+		return nil, err
+	}
+	u := url.URL{Scheme: "ws", Host: fmt.Sprintf("localhost:%s", conf.Port), Path: "/message"}
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), map[string][]string{
-		"verifyKey": {"1234567890"},
-		"qq":        {"2844255154"},
+		"verifyKey": {conf.VerifyKey},
+		"qq":        {conf.QQ},
 	})
 	if err != nil {
 		return nil, err
@@ -62,5 +72,6 @@ func GetBot() (*Bot, error) {
 		sender.GetWSSender(conn, ""),
 		conn,
 		[]Plugin{},
+		rawConfig,
 	}, nil
 }

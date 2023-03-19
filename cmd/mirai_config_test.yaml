@@ -1,0 +1,4 @@
+bot:
+  qq: 1234567
+  verify_key: 23456
+  port: 6789

@@ -14,21 +14,23 @@ func GetWSSender(conn function.Conn, sessionKey string) Sender {
 	}
 }
 
-func (d *senderWSImp) SendToFriend(target uint64, contents *message.Chain) (*record.SendMessageResponseData, error) {
+func (d *senderWSImp) SendToFriend(target uint64, contents *message.Chain, quote *uint64) (*record.SendMessageResponseData, error) {
 	resp := record.GetSendMessageResponse()
 	err := d.conn.SendRequest("sendFriendMessage", "", SendRequest{
 		Target:       target,
 		MessageChain: contents,
+		Quote:        quote,
 	}, resp)
-	log.Debugf("send to group get response %+v", resp.GetData().(*record.SendMessageResponseData))
+	log.Debugf("send to friend get response %+v", resp.GetData().(*record.SendMessageResponseData))
 	return resp.GetData().(*record.SendMessageResponseData), err
 }
 
-func (d *senderWSImp) SendToGroup(target uint64, contents *message.Chain) (*record.SendMessageResponseData, error) {
+func (d *senderWSImp) SendToGroup(target uint64, contents *message.Chain, quote *uint64) (*record.SendMessageResponseData, error) {
 	resp := record.GetSendMessageResponse()
 	err := d.conn.SendRequest("sendGroupMessage", "", SendRequest{
 		Target:       target,
 		MessageChain: contents,
+		Quote:        quote,
 	}, resp)
 	log.Debugf("send to group get response %+v", resp.GetData().(*record.SendMessageResponseData))
 	return resp.GetData().(*record.SendMessageResponseData), err
@@ -38,4 +40,5 @@ type SendRequest struct {
 	SessionKey   string         `json:"sessionKey,omitempty"`
 	Target       uint64         `json:"target"`
 	MessageChain *message.Chain `json:"messageChain"`
+	Quote        *uint64        `json:"quote,omitempty"`
 }

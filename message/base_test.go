@@ -9,7 +9,7 @@ import (
 func TestGetMessagePlain(t *testing.T) {
 	rawJson := "{\n                \"type\": \"Plain\",\n                \"text\": \"这个小酥肉好吃吗？\"\n            }"
 	result := gjson.Parse(rawJson)
-	message, err := GetMessage(result)
+	message, err := getMessage(result)
 	assert.Nil(t, err)
 	plainMessage, ok := message.(*PlainMessage)
 	assert.True(t, ok)
@@ -20,7 +20,7 @@ func TestGetMessagePlain(t *testing.T) {
 func TestGetMessageUnknown(t *testing.T) {
 	rawJson := "{\n                \"type\": \"Unknown\",\n                \"text\": \"这个小酥肉好吃吗？\"\n            }"
 	result := gjson.Parse(rawJson)
-	message, err := GetMessage(result)
+	message, err := getMessage(result)
 	assert.Nil(t, err)
 	baseMessage, ok := message.(*BaseImp)
 	assert.True(t, ok)
@@ -30,7 +30,7 @@ func TestGetMessageUnknown(t *testing.T) {
 func TestGetMessageSource(t *testing.T) {
 	rawJson := "{\n                \"type\": \"Source\",\n                \"id\": 1422833,\n                \"time\": 1659604654\n            }"
 	result := gjson.Parse(rawJson)
-	message, err := GetMessage(result)
+	message, err := getMessage(result)
 	assert.Nil(t, err)
 	sourceMessage, ok := message.(*SourceMessage)
 	assert.True(t, ok)

@@ -7,8 +7,8 @@ import (
 )
 
 type Sender interface {
-	SendToFriend(target uint64, contents *message.Chain) (*record.SendMessageResponseData, error)
-	SendToGroup(target uint64, contents *message.Chain) (*record.SendMessageResponseData, error)
+	SendToFriend(target uint64, contents *message.Chain, quote *uint64) (*record.SendMessageResponseData, error)
+	SendToGroup(target uint64, contents *message.Chain, quote *uint64) (*record.SendMessageResponseData, error)
 }
 
 type senderWSImp struct {

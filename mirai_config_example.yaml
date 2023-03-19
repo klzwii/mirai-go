@@ -1,0 +1,12 @@
+bot:
+  qq: 1234567
+  verify_key: 1234567
+  port: 1234567
+chatgpt:
+  max_user_history: 4
+  prompt: #不同群号/qq号对应的prompt
+    - 123745: "对应的prompt"
+  access_key: sk-B #chatgpt api accesskey
+  model: gpt-3.5-turbo
+  temperature: 0.7
+  max_tokens: 4000

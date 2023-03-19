@@ -41,7 +41,7 @@ type BaseDataImp struct {
 }
 
 func (b *BaseDataImp) UnmarshalJSON(data []byte) error {
-	results := gjson.GetMany(string(data), "type", "messageChain")
+	results := gjson.GetManyBytes(data, "type", "messageChain")
 	if len(results) < 1 {
 		return NotEnoughFieldsError
 	}
@@ -49,14 +49,11 @@ func (b *BaseDataImp) UnmarshalJSON(data []byte) error {
 	if len(results) < 2 || !results[1].IsArray() {
 		return nil
 	}
-	b.MessageChain = message.Chain{}
-	for _, result := range results[1].Array() {
-		if ele, err := message.GetMessage(result); err != nil {
-			return err
-		} else {
-			b.MessageChain = append(b.MessageChain, ele)
-		}
+	chain, err := message.GetMessageChain(results[1].Array())
+	if err != nil {
+		return err
 	}
+	b.MessageChain = chain
 	return nil
 }
 

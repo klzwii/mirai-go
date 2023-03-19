@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/klzwii/mirai-go/assembler"
 	"github.com/klzwii/mirai-go/record"
 	"github.com/klzwii/mirai-go/util"
@@ -13,6 +14,8 @@ import (
 	"sync"
 	"time"
 )
+
+var logger = log.WithField("core", "function")
 
 var timerPool = sync.Pool{
 	New: func() any {
@@ -61,7 +64,11 @@ func (c *connWsImp) SendRequest(command string, subCommand string, req any, resp
 		SubCommand: subCommand,
 		Content:    req,
 	}
-	log.Debugf("send ws request %+v", *t)
+	logger.Debugf("send ws request %+v", *t)
+	if util.IsDebug {
+		data, err := jsoniter.MarshalToString(t)
+		logger.Debug(data, err)
+	}
 	if err := c.conn.WriteJSON(t); err != nil {
 		return err
 	}
@@ -74,7 +81,7 @@ func (c *connWsImp) SendRequest(command string, subCommand string, req any, resp
 	start := time.Now().UnixMicro()
 	select {
 	case ret := <-ch:
-		log.Debug("get response after ", time.Now().UnixMicro()-start)
+		logger.Debug("get response after ", time.Now().UnixMicro()-start)
 		if ret.Err != nil {
 			return ret.Err
 		}
@@ -93,10 +100,10 @@ func (c *connWsImp) StartReading(ctx context.Context, ch chan record.Base) {
 		default:
 			_, m, err := c.conn.ReadMessage()
 			if err != nil {
-				log.Println("read:", err)
+				logger.Errorln("read:", err)
 				return
 			}
-			log.Debugf("Get ws message %v", string(m))
+			logger.Debugf("Get ws message %v", string(m))
 			go callback(m)
 		}
 	}
@@ -105,7 +112,7 @@ func (c *connWsImp) StartReading(ctx context.Context, ch chan record.Base) {
 func getDispatchFunc(e util.EventCenter, ch chan record.Base) func(message []byte) {
 	return func(message []byte) {
 		syncID := gjson.GetBytes(message, "syncId").Str
-		log.Debug("sync ID is ", syncID)
+		logger.Debug("sync ID is ", syncID)
 		if syncID == "-1" {
 			ch <- assembler.UnmarshalToRecord(message)
 		} else if len(syncID) != 0 {
@@ -114,11 +121,11 @@ func getDispatchFunc(e util.EventCenter, ch chan record.Base) func(message []byt
 				err     error
 			)
 			if eventID, err = strconv.ParseUint(syncID, 10, 64); err != nil {
-				log.Error("parse sync ID failed ", err)
+				logger.Error("parse sync ID failed ", err)
 				return
 			}
 			_ = e.Notify(uint32(eventID), message, nil)
-			log.Debug("notified event ", eventID)
+			logger.Debug("notified event ", eventID)
 		}
 	}
 }

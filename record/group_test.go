@@ -37,3 +37,8 @@ func TestGetGroupMessageRecord(t *testing.T) {
 	assert.Equal(t, groupData.Sender.MuteTimeRemaining, uint64(0))
 	assert.Equal(t, groupData.Sender.Group.ID, uint64(398294930))
 }
+
+func TestGetGroupMessageQuote(t *testing.T) {
+	record := GetGroupMessageRecord()
+	assert.Nil(t, jsoniter.Unmarshal([]byte("{\n    \"syncId\": \"-1\",\n    \"data\": {\n        \"type\": \"GroupMessage\",\n        \"messageChain\": [\n            {\n                \"type\": \"Source\",\n                \"id\": 3624,\n                \"time\": 1679220748\n            },\n            {\n                \"type\": \"Quote\",\n                \"id\": 3615,\n                \"senderId\": 2844255154,\n                \"targetId\": 590258464,\n                \"groupId\": 590258464,\n                \"origin\": [\n                    {\n                        \"type\": \"Plain\",\n                        \"text\": \" 小骚狗，你好啊。\"\n                    }\n                ]\n            },\n            {\n                \"type\": \"At\",\n                \"target\": 2844255154,\n                \"display\": \"\"\n            },\n            {\n                \"type\": \"Plain\",\n                \"text\": \" \"\n            }\n        ],\n        \"sender\": {\n            \"id\": 1027898733,\n            \"memberName\": \"klzwii(已碳化)\",\n            \"specialTitle\": \"\",\n            \"permission\": \"OWNER\",\n            \"joinTimestamp\": 1638155590,\n            \"lastSpeakTimestamp\": 1679220748,\n            \"muteTimeRemaining\": 0,\n            \"group\": {\n                \"id\": 590258464,\n                \"name\": \"klzwii、klzwii\",\n                \"permission\": \"MEMBER\"\n            }\n        }\n    }\n}"), record))
+}

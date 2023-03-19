@@ -22,7 +22,7 @@ var (
 
 func innerMarshal(rawJson []byte, ret record.Base) (record.Base, error) {
 	if err := jsoniter.Unmarshal(rawJson, ret); err != nil {
-		log.Println(err)
+		log.Errorln(err)
 		return nil, err
 	}
 	return ret, nil

@@ -10,9 +10,23 @@ type Type string
 const (
 	SOURCE = Type("Source")
 	PLAIN  = Type("Plain")
+	AT     = Type("At")
+	Quote  = Type("Quote")
 )
 
-func GetMessage(result gjson.Result) (Base, error) {
+func GetMessageChain(results []gjson.Result) (Chain, error) {
+	var chain = Chain{}
+	for _, result := range results {
+		if ele, err := getMessage(result); err != nil {
+			return nil, err
+		} else {
+			chain = append(chain, ele)
+		}
+	}
+	return chain, nil
+}
+
+func getMessage(result gjson.Result) (Base, error) {
 	messageType := Type(result.Get("type").Str)
 	var ret Base = nil
 	switch messageType {
@@ -20,6 +34,14 @@ func GetMessage(result gjson.Result) (Base, error) {
 		ret = &SourceMessage{}
 	case PLAIN:
 		ret = &PlainMessage{}
+	case AT:
+		ret = &AtMessage{}
+	case Quote:
+		origin, err := GetMessageChain(result.Get("origin").Array())
+		if err != nil {
+			return nil, err
+		}
+		ret = &QuoteMessage{Origin: origin}
 	default:
 		ret = &BaseImp{}
 	}
@@ -50,4 +72,19 @@ type SourceMessage struct {
 type PlainMessage struct {
 	BaseImp
 	Text string `json:"text,omitempty"`
+}
+
+type AtMessage struct {
+	BaseImp
+	Target  uint64 `json:"target"`
+	Display string `json:"display"`
+}
+
+type QuoteMessage struct {
+	BaseImp
+	Id       uint64 `json:"id"`
+	GroupId  uint64 `json:"groupId"`
+	SenderId uint64 `json:"senderId"`
+	TargetId uint64 `json:"targetId"`
+	Origin   Chain  `json:"origin"`
 }
